@@ -7,7 +7,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-// Обработка всех исключений, связанных с работой с базой данных должна находиться в dao
 public class UserDaoJDBCImpl implements UserDao {
     private static final Connection conn = Util.getInstance().getConnection();
 
@@ -15,7 +14,6 @@ public class UserDaoJDBCImpl implements UserDao {
 
     }
 
-    // Создание таблицы для User(ов) – не должно приводить к исключению, если такая таблица уже существует
     public void createUsersTable() {
         try (Statement statement = conn.createStatement()) {
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS users " +
@@ -25,7 +23,6 @@ public class UserDaoJDBCImpl implements UserDao {
         }
     }
 
-    // Удаление таблицы User(ов) – не должно приводить к исключению, если таблицы не существует
     public void dropUsersTable() {
         try (Statement statement = conn.createStatement()) {
             statement.executeUpdate("DROP TABLE IF EXISTS users");
@@ -34,7 +31,6 @@ public class UserDaoJDBCImpl implements UserDao {
         }
     }
 
-    // Добавление User в таблицу
     public void saveUser(String name, String lastName, byte age) {
         try (PreparedStatement pstm = conn.prepareStatement("INSERT INTO users (name, last_name, age) VALUES (?, ?, ?)")) {
             pstm.setString(1, name);
@@ -46,7 +42,6 @@ public class UserDaoJDBCImpl implements UserDao {
         }
     }
 
-    // Удаление User из таблицы ( по id )
     public void removeUserById(long id) {
         try (PreparedStatement pstm = conn.prepareStatement("DELETE FROM users WHERE id = ?")) {
             pstm.setLong(1, id);
@@ -56,7 +51,6 @@ public class UserDaoJDBCImpl implements UserDao {
         }
     }
 
-    // Получение всех User(ов) из таблицы
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
 
@@ -74,7 +68,6 @@ public class UserDaoJDBCImpl implements UserDao {
         return users;
     }
 
-    // Очистка содержания таблицы
     public void cleanUsersTable() {
         try (Statement statement = conn.createStatement()) {
             statement.executeUpdate("TRUNCATE TABLE users");
