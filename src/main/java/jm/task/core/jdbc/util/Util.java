@@ -33,7 +33,8 @@ public class Util {
         return instance;
     }
 
-    public Connection getConnection() {
+    public Connection getConnection() throws SQLException {
+        conn.setAutoCommit(false);
         return conn;
     }
 
