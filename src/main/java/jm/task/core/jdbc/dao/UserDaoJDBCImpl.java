@@ -8,109 +8,102 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
-    private static final Connection conn;
 
-    static {
-        try {
-            conn = Util.getInstance().getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    private final Connection connection = Util.getConnection();
 
     public UserDaoJDBCImpl() {
-
     }
 
-    public void createUsersTable() throws SQLException {
-        try (Statement statement = conn.createStatement()) {
-            conn.setAutoCommit(false);
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS users " +
-                    "(id BIGINT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255), last_name VARCHAR(255), age INT)");
-            conn.commit();
-        } catch (SQLException e) {
+    public void createUsersTable() {
+        String CREATE_TABLE = "CREATE TABLE if not exists users " +
+                "(id BIGINT not NULL AUTO_INCREMENT, " +
+                " name VARCHAR(70), " +
+                " lastName VARCHAR(70), " +
+                " age TINYINT, " +
+                " PRIMARY KEY ( id ))";
+
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate(CREATE_TABLE);
+            System.out.println("Table users create successful or already exists!");
+        } catch (SQLException | NullPointerException e) {
             e.printStackTrace();
-            conn.rollback ();
-        } finally {
-            conn.setAutoCommit(true);
         }
     }
 
-    public void dropUsersTable() throws SQLException {
-        try (Statement statement = conn.createStatement()) {
-            conn.setAutoCommit(false);
+    public void dropUsersTable() {
+        try (Statement statement = connection.createStatement()) {
             statement.executeUpdate("DROP TABLE IF EXISTS users");
-            conn.commit();
-        } catch (SQLException e) {
+            System.out.println("Table users is delete!");
+        } catch (SQLException | NullPointerException e) {
             e.printStackTrace();
-            conn.rollback ();
-        } finally {
-            conn.setAutoCommit(true);
         }
     }
 
     public void saveUser(String name, String lastName, byte age) throws SQLException {
-        try (PreparedStatement pstm = conn.prepareStatement("INSERT INTO users (name, last_name, age) VALUES (?, ?, ?)")) {
-            conn.setAutoCommit(false);
-            pstm.setString(1, name);
-            pstm.setString(2, lastName);
-            pstm.setByte(3, age);
-            pstm.executeUpdate();
-            conn.commit();
-        } catch (SQLException e) {
+        String INSERT = "INSERT INTO users VALUES(id,?,?,?)";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(INSERT)) {
+            connection.setAutoCommit(false);
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, lastName);
+            preparedStatement.setInt(3, age);
+            preparedStatement.executeUpdate();
+            System.out.println("User: " + name + "/" + lastName + "/" + age + " added to db!");
+            connection.commit();
+        } catch (SQLException | NullPointerException e) {
             e.printStackTrace();
-            conn.rollback ();
+            connection.rollback();
         } finally {
-            conn.setAutoCommit(true);
+            connection.setAutoCommit(true);
         }
     }
 
     public void removeUserById(long id) throws SQLException {
-        try (PreparedStatement pstm = conn.prepareStatement("DELETE FROM users WHERE id = ?")) {
-            conn.setAutoCommit(false);
-            pstm.setLong(1, id);
-            pstm.executeUpdate();
-            conn.commit();
-        } catch (SQLException e) {
+        String DELETE_BY_ID = "DELETE FROM users WHERE id= ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(DELETE_BY_ID)) {
+            connection.setAutoCommit(false);
+            preparedStatement.setString(1, String.valueOf(id));
+            preparedStatement.executeUpdate();
+            System.out.println("User with id : " + id + " deleted from db!");
+            connection.commit();
+        } catch (SQLException | NullPointerException e) {
             e.printStackTrace();
-            conn.rollback ();
+            connection.rollback();
         } finally {
-            conn.setAutoCommit(true);
+            connection.setAutoCommit(true);
         }
     }
 
-    public List<User> getAllUsers() throws SQLException {
-        List<User> users = new ArrayList<>();
+    public List<User> getAllUsers() {
+        List<User> userList = new ArrayList<>();
+        try (Statement statement = connection.createStatement()) {
+            ResultSet rs = statement.executeQuery("SELECT * FROM users");
+            while (rs.next()) {
+                User user = new User(rs.getString("name"),
+                        rs.getString("lastName"),
+                        rs.getByte("age"));
 
-        try (ResultSet resultSet = conn.createStatement().executeQuery("SELECT * FROM users")) {
-            conn.setAutoCommit(false);
-            while(resultSet.next()) {
-                User user = new User(resultSet.getString("name"),
-                        resultSet.getString("last_name"), resultSet.getByte("age"));
-                user.setId(resultSet.getLong("id"));
-                users.add(user);
+                user.setId(rs.getLong("id"));
+                userList.add(user);
+                System.out.println(user);
             }
-            conn.commit();
-        } catch (SQLException e) {
+        } catch (SQLException | NullPointerException e) {
             e.printStackTrace();
-            conn.rollback ();
-        } finally {
-            conn.setAutoCommit(true);
         }
-
-        return users;
+        return userList;
     }
 
     public void cleanUsersTable() throws SQLException {
-        try (Statement statement = conn.createStatement()) {
-            conn.setAutoCommit(false);
-            statement.executeUpdate("TRUNCATE TABLE users");
-            conn.commit();
-        } catch (SQLException e) {
+        try (Statement statement = connection.createStatement()){
+            connection.setAutoCommit(false);
+            statement.executeUpdate("DELETE from users");
+            System.out.println("Table users cleared!");
+            connection.commit();
+        } catch (SQLException | NullPointerException e) {
             e.printStackTrace();
-            conn.rollback ();
-        } finally {
-            conn.setAutoCommit(true);
+            connection.rollback();
+        }finally {
+            connection.setAutoCommit(true);
         }
     }
 }
